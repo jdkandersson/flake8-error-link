@@ -27,12 +27,17 @@ def _result(code: str) -> tuple[str, ...]:
         pytest.param("", (), id="trivial"),
         pytest.param("raise Exception()", (f"1:0 {MSG}",), id="more information not provided"),
         pytest.param(
+            "raise Exception(1)",
+            (f"1:0 {MSG}",),
+            id="more information not provided non-string literal",
+        ),
+        pytest.param(
             "raise Exception", (f"1:0 {MSG}",), id="more information not provided shorthand"
         ),
         pytest.param(
             "raise ValueError()",
             (f"1:0 {MSG}",),
-            id="more information not provided alternate exception",
+            id="more information not provided alternate inbuilt exception",
         ),
         pytest.param(
             "\nraise Exception()",
@@ -70,9 +75,16 @@ def _result(code: str) -> tuple[str, ...]:
             id="more information provided not at end",
         ),
         pytest.param(
-            'msg = "more information: http://example.com"\nraise Exception(msg)',
+            'raise Exception(msg := "more information: http://example.com")',
             (),
-            id="more information provided using variable",
+            id="more information provided walrus",
+        ),
+        pytest.param('msg = ""\nraise Exception(msg)', (), id="variable"),
+        pytest.param("raise CustomError", (), id="custom exception shorthand"),
+        pytest.param("raise CustomError()", (), id="custom exception"),
+        pytest.param("raise Exception(function_call())", (), id="argument is a function call"),
+        pytest.param(
+            "raise Exception((lambda: 1)())", (), id="argument is lambda definition and call"
         ),
     ],
 )

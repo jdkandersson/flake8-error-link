@@ -1,11 +1,12 @@
 """A linter that ensures all raised Exceptions include an error with a link to more information"""
 
 import ast
+import builtins
 import re
+import tomllib
 from pathlib import Path
 from typing import Generator, NamedTuple
 
-import tomllib
 from astpretty import pprint
 
 ERROR_CODE = next(
@@ -17,6 +18,11 @@ ERROR_CODE = next(
 )
 MSG = f"{ERROR_CODE} exceptions should be raised with a link to more information"
 DEFAULT_REGEX = r"more information: (mailto\:|(news|(ht|f)tp(s?))\:\/\/){1}\S+"
+BUILTIN_EXCEPTION_NAMES = frozenset(
+    name
+    for name, value in builtins.__dict__.items()
+    if isinstance(value, type) and issubclass(value, BaseException)
+)
 
 
 class Problem(NamedTuple):
@@ -52,8 +58,7 @@ class Visitor(ast.NodeVisitor):
         self.problems = []
         self.more_info_regex = re.compile(rf".*{more_info_regex}.*")
 
-    @staticmethod
-    def _node_invalid(node: ast.Raise) -> bool:
+    def _node_invalid(self, node: ast.Raise) -> bool:
         """Check whether a node is valid.
 
         Invalid nodes:
@@ -61,15 +66,15 @@ class Visitor(ast.NodeVisitor):
                 because it does not provide a message at all.
             raise <inbuilt exception>(): raise inbuilt exception without any arguments, invalid
                 because it does not provide a message at all.
-            raise <inbuilt exception>('<literal>'+): any inbuilt exception raised with
-                one or literals that is either not a string or does not match the more information
-                regular expression
+            raise <inbuilt exception>('<constant>'+): any inbuilt exception raised with
+                one or more constants that is either not a string or does not match the more
+                information regular expression
         Valid nodes:
             raise <custom exception>: raise custom defined exception, not invalid because the
                 custom definition could include a default message that includes the link.
-            raise <any exception>(*, <variable>, *): exception is raised where any one of the
-                arguments is a variable: valid because the variable could be message that includes
-                a link.
+            raise <any exception>(*, <not constant>, *): exception is raised where any one of the
+                arguments is not a constant (e.g., a variable, function call): valid because the
+                variable could be message that includes a link.
 
         Args:
             node: The node to check.
@@ -77,8 +82,36 @@ class Visitor(ast.NodeVisitor):
         Returns:
             Whether the node is valid.
         """
-        if not isinstance(node.exc, ast.Call):
+        if isinstance(node.exc, ast.Name) and node.exc.id in BUILTIN_EXCEPTION_NAMES:
             return True
+
+        # Handle exceptions that include a call
+        if isinstance(node.exc, ast.Call):
+            # Handle custom exceptions
+            if node.exc.func.id not in BUILTIN_EXCEPTION_NAMES:
+                return False
+
+            # Handle cases where at least one of the args is not a constant
+            if next(filter(lambda arg: not isinstance(arg, ast.Constant), node.exc.args), None):
+                return False
+
+            # Handle args that are constant
+            return not (
+                next(
+                    filter(
+                        None,
+                        (
+                            self.more_info_regex.match(arg.value)
+                            for arg in node.exc.args
+                            if isinstance(arg, ast.Constant) and isinstance(arg.value, str)
+                        ),
+                    ),
+                    None,
+                )
+                is not None
+            )
+
+        return False
 
     # The function must be called the same as the name of the node
     def visit_Raise(self, node: ast.Raise) -> None:  # pylint: disable=invalid-name
@@ -88,17 +121,7 @@ class Visitor(ast.NodeVisitor):
             node: The Raise node.
         """
         pprint(node)
-        if not isinstance(node.exc, ast.Call) or not next(
-            filter(
-                None,
-                (
-                    self.more_info_regex.match(arg.value)
-                    for arg in node.exc.args
-                    if isinstance(arg, ast.Constant)
-                ),
-            ),
-            None,
-        ):
+        if self._node_invalid(node):
             self.problems.append(Problem(node.lineno, node.col_offset))
 
         # Ensure recursion continues
