@@ -1,4 +1,4 @@
-"""A linter that ensures all raised Exceptions include an error with a link to more information"""
+"""A linter that ensures all raised Exceptions include an error with a link to more information."""
 
 import argparse
 import ast
@@ -31,8 +31,8 @@ class Location(NamedTuple):
     """Represents a location within the code.
 
     Attrs:
-        lineno: The line number the problem occured on
-        col_offset: The column the problem occured on
+        lineno: The line number the problem occurred on
+        col_offset: The column the problem occurred on
     """
 
     lineno: int
@@ -44,7 +44,7 @@ class Visitor(ast.NodeVisitor):
 
     Attrs:
         problems: All the problems that were encountered.
-        more_info_regex: The regular expression used to check whether the link with more
+        _more_info_regex: The regular expression used to check whether the link with more
             information was included.
     """
 
@@ -93,7 +93,7 @@ class Visitor(ast.NodeVisitor):
         # Handle exceptions that include a call
         if isinstance(node.exc, ast.Call):
             # Handle custom exceptions
-            if node.exc.func.id not in BUILTIN_EXCEPTION_NAMES:
+            if hasattr(node.exc.func, "id") and node.exc.func.id not in BUILTIN_EXCEPTION_NAMES:
                 return False
 
             # Handle cases where at least one of the args is not a constant
@@ -133,7 +133,7 @@ class Visitor(ast.NodeVisitor):
 
 
 class Plugin:
-    """Ensures all raised Exceptions include an error with a link to more information"""
+    """Ensures all raised Exceptions include an error with a link to more information."""
 
     name = __name__
     version = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))["tool"]["poetry"][
@@ -145,8 +145,9 @@ class Plugin:
         """Construct."""
         self._tree = tree
 
+    # No coverage since this only occurs from the command line
     @staticmethod
-    def add_options(option_manager: OptionManager) -> None:
+    def add_options(option_manager: OptionManager) -> None:  # pragma: nocover
         """Add additional options to flake8.
 
         Args:
@@ -162,8 +163,9 @@ class Plugin:
             ),
         )
 
+    # No coverage since this only occurs from the command line
     @classmethod
-    def parse_options(cls, options: argparse.Namespace) -> None:
+    def parse_options(cls, options: argparse.Namespace) -> None:  # pragma: nocover
         """Record the value of the options.
 
         Args:

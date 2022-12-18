@@ -1,4 +1,4 @@
-"""Tests for plugin"""
+"""Tests for plugin."""
 
 import ast
 import subprocess
@@ -130,7 +130,7 @@ def create_code_file(code: str, base_path: Path) -> Path:
     Returns:
         The path to the code file.
     """
-    (code_file := base_path / "code.py").write_text(code)
+    (code_file := base_path / "code.py").write_text(f'"""Docstring."""\n\n{code}')
     return code_file
 
 

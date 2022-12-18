@@ -16,6 +16,15 @@ pytest = "^7.2.0"
 mypy = "^0.991"
 isort = "^5.11.3"
 black = "^22.12.0"
+coverage = {extras = ["toml"], version = "^6.5.0"}
+pytest-cov = "^4.0.0"
+flake8-docstrings = "^1.6.0"
+flake8-builtins = "^2.0.1"
+pep8-naming = "^0.13.2"
+codespell = "^2.2.2"
+pylint = "^2.15.9"
+pydocstyle = "^6.1.1"
+toml = "^0.10.2"
 
 [build-system]
 requires = ["poetry-core"]
@@ -32,3 +41,13 @@ target-version = ["py311"]
 line_length = 99
 profile = "black"
 extra_standard_library = ["tomllib"]
+
+[tool.coverage.run]
+branch = true
+
+[tool.coverage.report]
+fail_under = 100
+show_missing = true
+
+[tool.mypy]
+ignore_missing_imports = true
