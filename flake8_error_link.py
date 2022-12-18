@@ -27,16 +27,16 @@ BUILTIN_EXCEPTION_NAMES = frozenset(
 ERROR_LINK_REGEX_ARG_NAME = "--error-link-regex"
 
 
-class Problem(NamedTuple):
-    """Represents a problem with the code.
+class Location(NamedTuple):
+    """Represents a location within the code.
 
     Attrs:
-        line: The line number the problem occured on
-        col: The column the problem occured on
+        lineno: The line number the problem occured on
+        col_offset: The column the problem occured on
     """
 
-    line: int
-    col: int
+    lineno: int
+    col_offset: int
 
 
 class Visitor(ast.NodeVisitor):
@@ -48,7 +48,7 @@ class Visitor(ast.NodeVisitor):
             information was included.
     """
 
-    problems: list[Problem]
+    problems: list[Location]
     _more_info_regex: re.Pattern[str]
 
     def __init__(self, more_info_regex: str = DEFAULT_REGEX) -> None:
@@ -77,6 +77,8 @@ class Visitor(ast.NodeVisitor):
             raise <any exception>(*, <not constant>, *): exception is raised where any one of the
                 arguments is not a constant (e.g., a variable, function call): valid because the
                 variable could be message that includes a link.
+            raise: Calling raise without exception, valid because this just re-raises an exception
+                which could be any exception
 
         Args:
             node: The node to check.
@@ -84,8 +86,9 @@ class Visitor(ast.NodeVisitor):
         Returns:
             Whether the node is valid.
         """
-        if isinstance(node.exc, ast.Name) and node.exc.id in BUILTIN_EXCEPTION_NAMES:
-            return True
+        # Handle case where the shortcut is used for exceptions
+        if isinstance(node.exc, ast.Name):
+            return node.exc.id in BUILTIN_EXCEPTION_NAMES
 
         # Handle exceptions that include a call
         if isinstance(node.exc, ast.Call):
@@ -98,7 +101,7 @@ class Visitor(ast.NodeVisitor):
                 return False
 
             # Handle args that are constant
-            return not (
+            return (
                 next(
                     filter(
                         None,
@@ -110,7 +113,7 @@ class Visitor(ast.NodeVisitor):
                     ),
                     None,
                 )
-                is not None
+                is None
             )
 
         return False
@@ -123,7 +126,7 @@ class Visitor(ast.NodeVisitor):
             node: The Raise node.
         """
         if self._node_invalid(node):
-            self.problems.append(Problem(node.lineno, node.col_offset))
+            self.problems.append(Location(node.lineno, node.col_offset))
 
         # Ensure recursion continues
         self.generic_visit(node)
@@ -171,9 +174,11 @@ class Plugin:
     def run(self) -> Generator[tuple[int, int, str, type["Plugin"]], None, None]:
         """Lint a file.
 
-        Returns:
+        Yields:
             All the issues that were found.
         """
         visitor = Visitor(self._error_link_regex)
         visitor.visit(self._tree)
-        yield from ((line, col, MSG, type(self)) for line, col in visitor.problems)
+        yield from (
+            (problem.lineno, problem.col_offset, MSG, type(self)) for problem in visitor.problems
+        )

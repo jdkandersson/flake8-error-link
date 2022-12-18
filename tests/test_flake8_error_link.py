@@ -91,6 +91,7 @@ def _result(code: str) -> tuple[str, ...]:
         pytest.param(
             "raise Exception((lambda: 1)())", (), id="argument is lambda definition and call"
         ),
+        pytest.param("raise", (), id="no exception"),
     ],
 )
 def test_plugin(code: str, expected_result: tuple[str, ...]):
