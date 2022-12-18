@@ -1,5 +1,6 @@
 """A linter that ensures all raised Exceptions include an error with a link to more information"""
 
+import argparse
 import ast
 import builtins
 import re
@@ -7,7 +8,7 @@ import tomllib
 from pathlib import Path
 from typing import Generator, NamedTuple
 
-from astpretty import pprint
+from flake8.options.manager import OptionManager
 
 ERROR_CODE = next(
     iter(
@@ -23,6 +24,7 @@ BUILTIN_EXCEPTION_NAMES = frozenset(
     for name, value in builtins.__dict__.items()
     if isinstance(value, type) and issubclass(value, BaseException)
 )
+ERROR_LINK_REGEX_ARG_NAME = "--error-link-regex"
 
 
 class Problem(NamedTuple):
@@ -47,7 +49,7 @@ class Visitor(ast.NodeVisitor):
     """
 
     problems: list[Problem]
-    more_info_regex: re.Pattern[str]
+    _more_info_regex: re.Pattern[str]
 
     def __init__(self, more_info_regex: str = DEFAULT_REGEX) -> None:
         """Construct.
@@ -56,7 +58,7 @@ class Visitor(ast.NodeVisitor):
             more_info_regex: The value for the more_info_regex attribute.
         """
         self.problems = []
-        self.more_info_regex = re.compile(rf".*{more_info_regex}.*")
+        self._more_info_regex = re.compile(rf".*{more_info_regex}.*")
 
     def _node_invalid(self, node: ast.Raise) -> bool:
         """Check whether a node is valid.
@@ -101,7 +103,7 @@ class Visitor(ast.NodeVisitor):
                     filter(
                         None,
                         (
-                            self.more_info_regex.match(arg.value)
+                            self._more_info_regex.match(arg.value)
                             for arg in node.exc.args
                             if isinstance(arg, ast.Constant) and isinstance(arg.value, str)
                         ),
@@ -120,7 +122,6 @@ class Visitor(ast.NodeVisitor):
         Args:
             node: The Raise node.
         """
-        pprint(node)
         if self._node_invalid(node):
             self.problems.append(Problem(node.lineno, node.col_offset))
 
@@ -135,10 +136,37 @@ class Plugin:
     version = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))["tool"]["poetry"][
         "version"
     ]
+    _error_link_regex: str = DEFAULT_REGEX
 
     def __init__(self, tree: ast.AST) -> None:
         """Construct."""
         self._tree = tree
+
+    @staticmethod
+    def add_options(option_manager: OptionManager) -> None:
+        """Add additional options to flake8.
+
+        Args:
+            option_manager: The flake8 OptionManager.
+        """
+        option_manager.add_option(
+            ERROR_LINK_REGEX_ARG_NAME,
+            default=DEFAULT_REGEX,
+            parse_from_config=True,
+            help=(
+                "The regular expression to use to verify that an exception was raised with a link "
+                f"to more information. (Default: {DEFAULT_REGEX})"
+            ),
+        )
+
+    @classmethod
+    def parse_options(cls, options: argparse.Namespace) -> None:
+        """Record the value of the options.
+
+        Args:
+            options: The options passed to flake8.
+        """
+        cls._error_link_regex = options.error_link_regex or cls._error_link_regex
 
     def run(self) -> Generator[tuple[int, int, str, type["Plugin"]], None, None]:
         """Lint a file.
@@ -146,6 +174,6 @@ class Plugin:
         Returns:
             All the issues that were found.
         """
-        visitor = Visitor()
+        visitor = Visitor(self._error_link_regex)
         visitor.visit(self._tree)
         yield from ((line, col, MSG, type(self)) for line, col in visitor.problems)
