@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "flake8-error-link"
+version = "0.1.0"
+description = "A linter that ensures all raised Exceptions include an error with a link to more information"
+authors = ["David Andersson <51036209+jdkandersson@users.noreply.github.com>"]
+license = "Apache 2.0"
+readme = "README.md"
+packages = [{include = "flake8_error_link"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+flake8 = "^6.0.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.2.0"
+mypy = "^0.991"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.plugins."flake8_entry_point"]
+EL = "flake8_error_link:ErrorLinkPlugin"
