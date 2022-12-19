@@ -77,13 +77,16 @@ class Visitor(ast.NodeVisitor):
 
     @staticmethod
     def _iter_args(nodes: list[ast.expr]) -> Iterable[ast.expr]:
-        """Iterate over the args whilst flatenning any JoinedStr.
+        """Iterate over the args whilst flatenning certain argument types.
+
+        Yields node and node.values from JoinedStr and node and node.value from NamedExpr and node
+        in all other cases.
 
         Args:
             nodes: The nodes to iterate over.
 
         Yields:
-            All the args including any nested args in JoinedStr.
+            All the args including any relevant nested args.
         """
         for node in nodes:
             match type(node):
