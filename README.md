@@ -191,3 +191,9 @@ except Exception as exc:
         "more information: https://github.com/jdkandersson/flake8-error-link#fix-eli004"
     ) from exc
 ```
+
+This rule can be spurios at times if an exception is re-raisesd that already
+has a more information link. Regardless, it is usually a good idea to include a
+specific link for a problem. The context is usually different when an exception
+is re-raised so it could be useful to include documentation for that context
+rather then relying on any link provided by the original exception.
