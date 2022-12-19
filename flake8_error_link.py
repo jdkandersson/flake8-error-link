@@ -138,7 +138,7 @@ class Visitor(ast.NodeVisitor):
                     (
                         self._more_info_regex.match(arg.value)
                         # pylint seems to think self._iter_args doesn't return an iterable
-                        for arg in self._iter_args(node.args)  # pylint: disable=not-an-iterable
+                        for arg in Visitor._iter_args(node.args)  # pylint: disable=not-an-iterable
                         if isinstance(arg, ast.Constant) and isinstance(arg.value, str)
                     ),
                 ),
