@@ -8,12 +8,14 @@ from pathlib import Path
 import pytest
 
 from flake8_error_link import (
+    BUILTIN_CODE,
     BUILTIN_MSG,
+    CUSTOM_CODE,
     CUSTOM_MSG,
     ERROR_LINK_REGEX_ARG_NAME,
+    VARIABLE_INCLUDED_CODE,
+    VARIABLE_INCLUDED_MSG,
     Plugin,
-    BUILTIN_CODE,
-    CUSTOM_CODE,
 )
 
 _VALID_RAISE_MSG = "more information: http://example.com"
@@ -76,9 +78,27 @@ def _result(code: str) -> tuple[str, ...]:
             id="custom exception more information not provided",
         ),
         pytest.param(
+            'msg = ""\nraise Exception(msg)', (f"2:0 {VARIABLE_INCLUDED_MSG}",), id="variable"
+        ),
+        pytest.param(
+            "raise Exception(function_call())",
+            (f"1:0 {VARIABLE_INCLUDED_MSG}",),
+            id="argument is a function call",
+        ),
+        pytest.param(
+            "raise Exception((lambda: 1)())",
+            (f"1:0 {VARIABLE_INCLUDED_MSG}",),
+            id="argument is lambda definition and call",
+        ),
+        pytest.param(
             f'raise Exception("{_VALID_RAISE_MSG}")',
             (),
             id="more information provided",
+        ),
+        pytest.param(
+            f'msg = ""\nraise Exception(msg, "{_VALID_RAISE_MSG}")',
+            (),
+            id="variable more information provided",
         ),
         pytest.param(
             f'raise CustomError("{_VALID_RAISE_MSG}")',
@@ -96,6 +116,11 @@ def _result(code: str) -> tuple[str, ...]:
             id="more information provided second args",
         ),
         pytest.param(
+            f'raise Exception("{_VALID_RAISE_MSG}", "second")',
+            (),
+            id="more information provided first args",
+        ),
+        pytest.param(
             f'raise Exception("other text {_VALID_RAISE_MSG}")',
             (),
             id="more information provided not at start",
@@ -109,11 +134,6 @@ def _result(code: str) -> tuple[str, ...]:
             f'raise Exception(msg := "{_VALID_RAISE_MSG}")',
             (),
             id="more information provided walrus",
-        ),
-        pytest.param('msg = ""\nraise Exception(msg)', (), id="variable"),
-        pytest.param("raise Exception(function_call())", (), id="argument is a function call"),
-        pytest.param(
-            "raise Exception((lambda: 1)())", (), id="argument is lambda definition and call"
         ),
         pytest.param("raise", (), id="no exception"),
         pytest.param(
@@ -190,17 +210,20 @@ def test_integration_fail(tmp_path: Path):
             "raise Exception('test')\n", f"{ERROR_LINK_REGEX_ARG_NAME} test", id="custom regex"
         ),
         pytest.param(
-            f"raise Exception  # noqa: {BUILTIN_CODE}\n",
-            f"{ERROR_LINK_REGEX_ARG_NAME} test",
-            id=f"{BUILTIN_CODE} suppressed",
+            f"raise Exception  # noqa: {BUILTIN_CODE}\n", "", id=f"{BUILTIN_CODE} suppressed"
         ),
         pytest.param(
             (
                 f'\nclass CustomError(Exception):\n    """Custom."""\n\n\nraise CustomError  '
                 f"# noqa: {CUSTOM_CODE}\n"
             ),
-            f"{ERROR_LINK_REGEX_ARG_NAME} test",
+            "",
             id=f"{CUSTOM_CODE} suppressed",
+        ),
+        pytest.param(
+            f'test = "test"\nraise Exception(test)  # noqa: {VARIABLE_INCLUDED_CODE}\n',
+            "",
+            id=f"{VARIABLE_INCLUDED_CODE} suppressed",
         ),
     ],
 )

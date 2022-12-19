@@ -25,6 +25,7 @@ codespell = "^2.2.2"
 pylint = "^2.15.9"
 pydocstyle = "^6.1.1"
 toml = "^0.10.2"
+astpretty = "^3.0.0"
 
 [build-system]
 requires = ["poetry-core"]

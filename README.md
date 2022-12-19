@@ -46,7 +46,11 @@ The plugin adds the following configurations to `flake8`:
 
 ## Rules
 
+A few rules have been defined to allow for selective suppression:
+
 * `ELI001`: checks that any builtin exceptions that are raised with constant
    arguments include a link to more information.
 * `ELI002`: checks that any custom exceptions that are raised with constant
    arguments include a link to more information.
+* `ELI003`: checks that any exceptions that are raised with variable arguments
+  include a constant argument with a link to more information.

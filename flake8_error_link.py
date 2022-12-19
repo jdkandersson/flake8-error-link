@@ -6,7 +6,7 @@ import builtins
 import re
 import tomllib
 from pathlib import Path
-from typing import Generator, NamedTuple
+from typing import Generator, Iterable, NamedTuple
 
 from flake8.options.manager import OptionManager
 
@@ -25,6 +25,10 @@ BUILTIN_CODE = f"{ERROR_CODE_PREFIX}001"
 BUILTIN_MSG = f"{BUILTIN_CODE} builtin {BASE_MSG}"
 CUSTOM_CODE = f"{ERROR_CODE_PREFIX}002"
 CUSTOM_MSG = f"{CUSTOM_CODE} custom {BASE_MSG}"
+VARIABLE_INCLUDED_CODE = f"{ERROR_CODE_PREFIX}003"
+VARIABLE_INCLUDED_MSG = (
+    f"{VARIABLE_INCLUDED_CODE} (detected variable in exception args) {BASE_MSG}"
+)
 DEFAULT_REGEX = r"more information: (mailto\:|(news|(ht|f)tp(s?))\:\/\/){1}\S+"
 BUILTIN_EXCEPTION_NAMES = frozenset(
     name
@@ -69,6 +73,74 @@ class Visitor(ast.NodeVisitor):
         self.problems = []
         self._more_info_regex = re.compile(rf".*{more_info_regex}.*")
 
+    @staticmethod
+    def _iter_args(nodes: list[ast.expr]) -> Iterable[ast.expr]:
+        """Iterate over the args whilst flatenning any JoinedStr.
+
+        Args:
+            nodes: The nodes to iterate over.
+
+        Yields:
+            All the args including any nested args in JoinedStr.
+        """
+        for node in nodes:
+            match type(node):
+                case ast.JoinedStr:
+                    assert isinstance(node, ast.JoinedStr)
+                    yield node
+                    yield from node.values
+                case ast.NamedExpr:
+                    assert isinstance(node, ast.NamedExpr)
+                    yield node
+                    yield node.value
+                case _:
+                    yield node
+
+    def _includes_variable(self, node: ast.Call) -> bool:
+        """Check whether the node includes a variable in its arguments.
+
+        Args:
+            node: The node to check.
+
+        Returns:
+            Whether the node includes a variable in its arguments.
+        """
+        return (
+            next(
+                filter(
+                    lambda arg: not isinstance(arg, ast.Constant),
+                    self._iter_args(node.args),
+                ),
+                None,
+            )
+            is not None
+        )
+
+    def _includes_link(self, node: ast.Call) -> bool:
+        """Check whether the node includes a constant with the more information link.
+
+        Args:
+            node: The node to check.
+
+        Returns:
+            Whether the node includes a constant with the more information link.
+        """
+        return (
+            next(
+                filter(
+                    None,
+                    (
+                        self._more_info_regex.match(arg.value)
+                        # pylint seems to think self._iter_args doesn't return an iterable
+                        for arg in self._iter_args(node.args)  # pylint: disable=not-an-iterable
+                        if isinstance(arg, ast.Constant) and isinstance(arg.value, str)
+                    ),
+                ),
+                None,
+            )
+            is not None
+        )
+
     def _node_problem_message(self, node: ast.Raise) -> str | None:
         """Check whether a node has a problem.
 
@@ -80,12 +152,14 @@ class Visitor(ast.NodeVisitor):
             raise <inbuilt exception>('<constant>'+): any inbuilt exception raised with
                 one or more constants that is either not a string or does not match the more
                 information regular expression
+            raise <any exception>(<constant>*, <variable>+, <constant>*): exception is raised where
+                any one of the arguments is not a constant (e.g., a variable, function call) and
+                none of the constants are a string with a link to more information
         Valid nodes:
-            raise <any exception>(*, <not constant>, *): exception is raised where any one of the
-                arguments is not a constant (e.g., a variable, function call): valid because the
-                variable could be message that includes a link.
             raise: Calling raise without exception, valid because this just re-raises an exception
                 which could be any exception
+            raise <exception>('<constant>'+): any exception raised with one or more constants where
+                one of the constants has the more information link
 
         Args:
             node: The node to check.
@@ -99,34 +173,12 @@ class Visitor(ast.NodeVisitor):
 
         # Handle exceptions that include a call
         if isinstance(node.exc, ast.Call):
-            # Handle cases where at least one of the args is not a constant
-            if next(filter(lambda arg: not isinstance(arg, ast.Constant), node.exc.args), None):
-                return None
-
-            # Handle args that are constant
-            includes_link = (
-                next(
-                    filter(
-                        None,
-                        (
-                            self._more_info_regex.match(arg.value)
-                            for arg in node.exc.args
-                            if isinstance(arg, ast.Constant) and isinstance(arg.value, str)
-                        ),
-                    ),
-                    None,
-                )
-                is not None
-            )
-            if not includes_link:
-                return (
-                    BUILTIN_MSG
-                    if (
-                        hasattr(node.exc.func, "id")
-                        and node.exc.func.id in BUILTIN_EXCEPTION_NAMES
-                    )
-                    else CUSTOM_MSG
-                )
+            if not self._includes_link(node.exc):
+                if self._includes_variable(node.exc):
+                    return VARIABLE_INCLUDED_MSG
+                if hasattr(node.exc.func, "id") and node.exc.func.id in BUILTIN_EXCEPTION_NAMES:
+                    return BUILTIN_MSG
+                return CUSTOM_MSG
 
         return None
 
