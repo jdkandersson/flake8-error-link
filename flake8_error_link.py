@@ -17,7 +17,12 @@ ERROR_CODE = next(
         ]["flake8.extension"].keys()
     )
 )
-MSG = f"{ERROR_CODE} exceptions should be raised with a link to more information"
+BASE_MSG = (
+    "exceptions should be raised with a link to more information: "
+    "https://github.com/jdkandersson/flake8-error-link"
+)
+BUILTIN_MSG = f"{ERROR_CODE}001 builtin {BASE_MSG}"
+CUSTOM_MSG = f"{ERROR_CODE}002 custom {BASE_MSG}"
 DEFAULT_REGEX = r"more information: (mailto\:|(news|(ht|f)tp(s?))\:\/\/){1}\S+"
 BUILTIN_EXCEPTION_NAMES = frozenset(
     name
@@ -27,16 +32,18 @@ BUILTIN_EXCEPTION_NAMES = frozenset(
 ERROR_LINK_REGEX_ARG_NAME = "--error-link-regex"
 
 
-class Location(NamedTuple):
-    """Represents a location within the code.
+class Problem(NamedTuple):
+    """Represents a problem within the code.
 
     Attrs:
         lineno: The line number the problem occurred on
         col_offset: The column the problem occurred on
+        msg: The message explaining the problem
     """
 
     lineno: int
     col_offset: int
+    msg: str
 
 
 class Visitor(ast.NodeVisitor):
@@ -48,7 +55,7 @@ class Visitor(ast.NodeVisitor):
             information was included.
     """
 
-    problems: list[Location]
+    problems: list[Problem]
     _more_info_regex: re.Pattern[str]
 
     def __init__(self, more_info_regex: str = DEFAULT_REGEX) -> None:
@@ -60,20 +67,18 @@ class Visitor(ast.NodeVisitor):
         self.problems = []
         self._more_info_regex = re.compile(rf".*{more_info_regex}.*")
 
-    def _node_invalid(self, node: ast.Raise) -> bool:
-        """Check whether a node is valid.
+    def _node_problem_message(self, node: ast.Raise) -> str | None:
+        """Check whether a node has a problem.
 
         Invalid nodes:
-            raise <inbuilt exception>: raise inbuilt exception without any arguments, invalid
+            raise <exception>: raise exception without any arguments, invalid
                 because it does not provide a message at all.
-            raise <inbuilt exception>(): raise inbuilt exception without any arguments, invalid
+            raise <exception>(): raise exception without any arguments, invalid
                 because it does not provide a message at all.
             raise <inbuilt exception>('<constant>'+): any inbuilt exception raised with
                 one or more constants that is either not a string or does not match the more
                 information regular expression
         Valid nodes:
-            raise <custom exception>: raise custom defined exception, not invalid because the
-                custom definition could include a default message that includes the link.
             raise <any exception>(*, <not constant>, *): exception is raised where any one of the
                 arguments is not a constant (e.g., a variable, function call): valid because the
                 variable could be message that includes a link.
@@ -84,24 +89,20 @@ class Visitor(ast.NodeVisitor):
             node: The node to check.
 
         Returns:
-            Whether the node is valid.
+            The problem message if there is a problem or None.
         """
         # Handle case where the shortcut is used for exceptions
         if isinstance(node.exc, ast.Name):
-            return node.exc.id in BUILTIN_EXCEPTION_NAMES
+            return BUILTIN_MSG if node.exc.id in BUILTIN_EXCEPTION_NAMES else CUSTOM_MSG
 
         # Handle exceptions that include a call
         if isinstance(node.exc, ast.Call):
-            # Handle custom exceptions
-            if hasattr(node.exc.func, "id") and node.exc.func.id not in BUILTIN_EXCEPTION_NAMES:
-                return False
-
             # Handle cases where at least one of the args is not a constant
             if next(filter(lambda arg: not isinstance(arg, ast.Constant), node.exc.args), None):
-                return False
+                return None
 
             # Handle args that are constant
-            return (
+            includes_link = (
                 next(
                     filter(
                         None,
@@ -113,10 +114,12 @@ class Visitor(ast.NodeVisitor):
                     ),
                     None,
                 )
-                is None
+                is not None
             )
+            if not includes_link:
+                return BUILTIN_MSG if node.exc.func.id in BUILTIN_EXCEPTION_NAMES else CUSTOM_MSG
 
-        return False
+        return None
 
     # The function must be called the same as the name of the node
     def visit_Raise(self, node: ast.Raise) -> None:  # pylint: disable=invalid-name
@@ -125,8 +128,8 @@ class Visitor(ast.NodeVisitor):
         Args:
             node: The Raise node.
         """
-        if self._node_invalid(node):
-            self.problems.append(Location(node.lineno, node.col_offset))
+        if msg := self._node_problem_message(node):
+            self.problems.append(Problem(node.lineno, node.col_offset, msg))
 
         # Ensure recursion continues
         self.generic_visit(node)
@@ -182,5 +185,6 @@ class Plugin:
         visitor = Visitor(self._error_link_regex)
         visitor.visit(self._tree)
         yield from (
-            (problem.lineno, problem.col_offset, MSG, type(self)) for problem in visitor.problems
+            (problem.lineno, problem.col_offset, problem.msg, type(self))
+            for problem in visitor.problems
         )

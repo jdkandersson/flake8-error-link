@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from flake8_error_link import ERROR_LINK_REGEX_ARG_NAME, MSG, Plugin
+from flake8_error_link import ERROR_LINK_REGEX_ARG_NAME, BUILTIN_MSG, CUSTOM_MSG, Plugin
 
 _VALID_RAISE_MSG = "more information: http://example.com"
 
@@ -30,34 +30,53 @@ def _result(code: str) -> tuple[str, ...]:
     "code, expected_result",
     [
         pytest.param("", (), id="trivial"),
-        pytest.param("raise Exception()", (f"1:0 {MSG}",), id="more information not provided"),
+        pytest.param(
+            "raise Exception()", (f"1:0 {BUILTIN_MSG}",), id="more information not provided"
+        ),
         pytest.param(
             "raise Exception(1)",
-            (f"1:0 {MSG}",),
+            (f"1:0 {BUILTIN_MSG}",),
             id="more information not provided non-string literal",
         ),
         pytest.param(
-            "raise Exception", (f"1:0 {MSG}",), id="more information not provided shorthand"
+            "raise Exception",
+            (f"1:0 {BUILTIN_MSG}",),
+            id="more information not provided shorthand",
         ),
         pytest.param(
             "raise ValueError()",
-            (f"1:0 {MSG}",),
+            (f"1:0 {BUILTIN_MSG}",),
             id="more information not provided alternate inbuilt exception",
         ),
         pytest.param(
             "\nraise Exception()",
-            (f"2:0 {MSG}",),
+            (f"2:0 {BUILTIN_MSG}",),
             id="more information not provided not first line",
         ),
         pytest.param(
             "if True: raise Exception()",
-            (f"1:9 {MSG}",),
+            (f"1:9 {BUILTIN_MSG}",),
             id="more information not provided not first column",
+        ),
+        pytest.param(
+            "raise CustomError",
+            (f"1:0 {CUSTOM_MSG}",),
+            id="custom exception more information not provided shorthand",
+        ),
+        pytest.param(
+            "raise CustomError()",
+            (f"1:0 {CUSTOM_MSG}",),
+            id="custom exception more information not provided",
         ),
         pytest.param(
             f'raise Exception("{_VALID_RAISE_MSG}")',
             (),
             id="more information provided",
+        ),
+        pytest.param(
+            f'raise CustomError("{_VALID_RAISE_MSG}")',
+            (),
+            id="custom exception more information provided",
         ),
         pytest.param(
             f'raise ValueError("{_VALID_RAISE_MSG}")',
@@ -85,13 +104,16 @@ def _result(code: str) -> tuple[str, ...]:
             id="more information provided walrus",
         ),
         pytest.param('msg = ""\nraise Exception(msg)', (), id="variable"),
-        pytest.param("raise CustomError", (), id="custom exception shorthand"),
-        pytest.param("raise CustomError()", (), id="custom exception"),
         pytest.param("raise Exception(function_call())", (), id="argument is a function call"),
         pytest.param(
             "raise Exception((lambda: 1)())", (), id="argument is lambda definition and call"
         ),
         pytest.param("raise", (), id="no exception"),
+        pytest.param(
+            f'raise Exception(f"{_VALID_RAISE_MSG} {{variable}}")',
+            (),
+            id="more information provided f-string",
+        ),
     ],
 )
 def test_plugin(code: str, expected_result: tuple[str, ...]):
@@ -149,7 +171,7 @@ def test_integration_fail(tmp_path: Path):
     ) as proc:
         stdout = proc.communicate()[0].decode(encoding="utf-8")
 
-        assert MSG in stdout
+        assert BUILTIN_MSG in stdout
         assert proc.returncode
 
 
@@ -177,5 +199,5 @@ def test_integration_pass(code: str, extra_args: str, tmp_path: Path):
     ) as proc:
         stdout = proc.communicate()[0].decode(encoding="utf-8")
 
-        assert MSG not in stdout
+        assert BUILTIN_MSG not in stdout
         assert not proc.returncode, stdout
