@@ -264,5 +264,5 @@ def test_integration_pass(code: str, extra_args: str, tmp_path: Path):
     ) as proc:
         stdout = proc.communicate()[0].decode(encoding="utf-8")
 
-        assert BUILTIN_MSG not in stdout
-        assert not proc.returncode, stdout
+        assert not stdout, stdout
+        assert not proc.returncode
