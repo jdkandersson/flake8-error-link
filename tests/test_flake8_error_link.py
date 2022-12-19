@@ -7,7 +7,14 @@ from pathlib import Path
 
 import pytest
 
-from flake8_error_link import ERROR_LINK_REGEX_ARG_NAME, BUILTIN_MSG, CUSTOM_MSG, Plugin
+from flake8_error_link import (
+    BUILTIN_MSG,
+    CUSTOM_MSG,
+    ERROR_LINK_REGEX_ARG_NAME,
+    Plugin,
+    BUILTIN_CODE,
+    CUSTOM_CODE,
+)
 
 _VALID_RAISE_MSG = "more information: http://example.com"
 
@@ -181,6 +188,19 @@ def test_integration_fail(tmp_path: Path):
         pytest.param(f"raise Exception('{_VALID_RAISE_MSG}')\n", "", id="default regex"),
         pytest.param(
             "raise Exception('test')\n", f"{ERROR_LINK_REGEX_ARG_NAME} test", id="custom regex"
+        ),
+        pytest.param(
+            f"raise Exception  # noqa: {BUILTIN_CODE}\n",
+            f"{ERROR_LINK_REGEX_ARG_NAME} test",
+            id=f"{BUILTIN_CODE} suppressed",
+        ),
+        pytest.param(
+            (
+                f'\nclass CustomError(Exception):\n    """Custom."""\n\n\nraise CustomError  '
+                f"# noqa: {CUSTOM_CODE}\n"
+            ),
+            f"{ERROR_LINK_REGEX_ARG_NAME} test",
+            id=f"{CUSTOM_CODE} suppressed",
         ),
     ],
 )

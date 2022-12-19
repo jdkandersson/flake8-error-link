@@ -10,7 +10,7 @@ from typing import Generator, NamedTuple
 
 from flake8.options.manager import OptionManager
 
-ERROR_CODE = next(
+ERROR_CODE_PREFIX = next(
     iter(
         tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))["tool"]["poetry"][
             "plugins"
@@ -21,8 +21,10 @@ BASE_MSG = (
     "exceptions should be raised with a link to more information: "
     "https://github.com/jdkandersson/flake8-error-link"
 )
-BUILTIN_MSG = f"{ERROR_CODE}001 builtin {BASE_MSG}"
-CUSTOM_MSG = f"{ERROR_CODE}002 custom {BASE_MSG}"
+BUILTIN_CODE = f"{ERROR_CODE_PREFIX}001"
+BUILTIN_MSG = f"{BUILTIN_CODE} builtin {BASE_MSG}"
+CUSTOM_CODE = f"{ERROR_CODE_PREFIX}002"
+CUSTOM_MSG = f"{CUSTOM_CODE} custom {BASE_MSG}"
 DEFAULT_REGEX = r"more information: (mailto\:|(news|(ht|f)tp(s?))\:\/\/){1}\S+"
 BUILTIN_EXCEPTION_NAMES = frozenset(
     name
@@ -117,7 +119,14 @@ class Visitor(ast.NodeVisitor):
                 is not None
             )
             if not includes_link:
-                return BUILTIN_MSG if node.exc.func.id in BUILTIN_EXCEPTION_NAMES else CUSTOM_MSG
+                return (
+                    BUILTIN_MSG
+                    if (
+                        hasattr(node.exc.func, "id")
+                        and node.exc.func.id in BUILTIN_EXCEPTION_NAMES
+                    )
+                    else CUSTOM_MSG
+                )
 
         return None
 

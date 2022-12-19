@@ -3,7 +3,7 @@
 Have you ever encountered an error when using a package and then gone to Google
 to find out how to solve the error? Wouldn't your users prefer to go directly
 to your documentation that tells them exactly what went wrong and how to
-resolve that error? `flake8-error-link` checks the way excpetions are raised in
+resolve that error? `flake8-error-link` checks the way exceptions are raised in
 your code base to ensure that a link with more information is provided.
 
 ## Getting Started
