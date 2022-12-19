@@ -25,14 +25,14 @@ raise Exception
 This will produce warnings such as:
 
 ```shell
-source.py:1:0: ELI001 builtin exceptions should be raised with a link to more information: https://github.com/jdkandersson/flake8-error-link
+source.py:1:0: ELI001 builtin exceptions should be raised with a link to more information: https://github.com/jdkandersson/flake8-error-link#fix-eli001
 ```
 
 This can be resolved by changing the code to:
 
 ```Python
 # source.py
-raise Exception("more information: https://github.com/jdkandersson/flake8-error-link")
+raise Exception("more information: https://github.com/jdkandersson/flake8-error-link#fix-eli001")
 ```
 
 ## Configuration
@@ -60,7 +60,7 @@ A few rules have been defined to allow for selective suppression:
 ### Fix ELI001
 
 This linting rule is trigger by raising an inbuilt exception without providing
-a constant that include a link to more information as one of the arguments to
+a constant that includes a link to more information as one of the arguments to
 the constructor. For example:
 
 ```Python
@@ -70,27 +70,27 @@ raise ValueError
 
 raise Exception()
 
-raise Exception("something went wrong")
+raise Exception("oh no! :(")
 ```
 
 These examples can be fixed by using something like:
 
 ```Python
 raise Exception(
-    "more information: https://github.com/jdkandersson/flake8-error-link"
+    "more information: https://github.com/jdkandersson/flake8-error-link#fix-eli001"
 )
 
 raise ValueError(
-    "more information: https://github.com/jdkandersson/flake8-error-link"
+    "more information: https://github.com/jdkandersson/flake8-error-link#fix-eli001"
 )
 
 raise Exception(
-    "more information: https://github.com/jdkandersson/flake8-error-link"
+    "more information: https://github.com/jdkandersson/flake8-error-link#fix-eli001"
 )
 
 raise Exception(
-    "something went wrong",
-    "more information: https://github.com/jdkandersson/flake8-error-link",
+    "oh no! :(",
+    "more information: https://github.com/jdkandersson/flake8-error-link#fix-eli001",
 )
 ```
 
@@ -108,7 +108,7 @@ raise CustomError
 
 raise CustomError()
 
-raise CustomError("something went wrong")
+raise CustomError("bummer...")
 ```
 
 These examples can be fixed by using something like:
@@ -118,16 +118,16 @@ class CustomError(Exception):
     pass
 
 raise CustomError(
-    "more information: https://github.com/jdkandersson/flake8-error-link"
+    "more information: https://github.com/jdkandersson/flake8-error-link#fix-eli002"
 )
 
 raise CustomError(
-    "more information: https://github.com/jdkandersson/flake8-error-link"
+    "more information: https://github.com/jdkandersson/flake8-error-link#fix-eli002"
 )
 
 raise CustomError(
-    "something went wrong",
-    "more information: https://github.com/jdkandersson/flake8-error-link",
+    "bummer...",
+    "more information: https://github.com/jdkandersson/flake8-error-link#fix-eli002",
 )
 ```
 
@@ -138,7 +138,7 @@ argument without providing a constant that include a link to more information
 as one of the arguments to the constructor. For example:
 
 ```Python
-message = "something went wrong"
+message = "gotcha"
 
 def get_message():
     return message
@@ -151,18 +151,18 @@ raise Exception(f"{message} quite badly")
 These examples can be fixed by using something like:
 
 ```Python
-message = "something went wrong"
+message = "gotcha"
 
 def get_message():
     return message
 
 raise Exception(
     get_message(),
-    "more information: https://github.com/jdkandersson/flake8-error-link",
+    "more information: https://github.com/jdkandersson/flake8-error-link#fix-eli003",
 )
 
 raise Exception(
-    f"{message} quite badly, more information: https://github.com/jdkandersson/flake8-error-link"
+    f"{message} quite badly, more information: https://github.com/jdkandersson/flake8-error-link#fix-eli003"
 )
 ```
 
@@ -173,7 +173,7 @@ This linting rule is trigger by re-raising an exception. For example:
 ```Python
 try:
     raise Exception(
-        "more information: https://github.com/jdkandersson/flake8-error-link"
+        "more information: https://github.com/jdkandersson/flake8-error-link#fix-eli004"
     )
 except Exception:
     raise
@@ -184,10 +184,10 @@ This example can be fixed by using something like:
 ```Python
 try:
     raise Exception(
-        "more information: https://github.com/jdkandersson/flake8-error-link"
+        "more information: https://github.com/jdkandersson/flake8-error-link#fix-eli004"
     )
 except Exception as exc:
     raise Exception(
-        "more information: https://github.com/jdkandersson/flake8-error-link"
+        "more information: https://github.com/jdkandersson/flake8-error-link#fix-eli004"
     ) from exc
 ```

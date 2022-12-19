@@ -22,15 +22,15 @@ BASE_MSG = (
     "https://github.com/jdkandersson/flake8-error-link"
 )
 BUILTIN_CODE = f"{ERROR_CODE_PREFIX}001"
-BUILTIN_MSG = f"{BUILTIN_CODE} builtin {BASE_MSG}"
+BUILTIN_MSG = f"{BUILTIN_CODE} builtin {BASE_MSG}#fix-eli001"
 CUSTOM_CODE = f"{ERROR_CODE_PREFIX}002"
-CUSTOM_MSG = f"{CUSTOM_CODE} custom {BASE_MSG}"
+CUSTOM_MSG = f"{CUSTOM_CODE} custom {BASE_MSG}#fix-eli002"
 VARIABLE_INCLUDED_CODE = f"{ERROR_CODE_PREFIX}003"
 VARIABLE_INCLUDED_MSG = (
-    f"{VARIABLE_INCLUDED_CODE} (detected variable in exception args) {BASE_MSG}"
+    f"{VARIABLE_INCLUDED_CODE} (detected variable in exception args) {BASE_MSG}#fix-eli003"
 )
 RE_RAISE_CODE = f"{ERROR_CODE_PREFIX}004"
-RE_RAISE_MSG = f"{RE_RAISE_CODE} re-raised {BASE_MSG}"
+RE_RAISE_MSG = f"{RE_RAISE_CODE} re-raised {BASE_MSG}#fix-eli004"
 DEFAULT_REGEX = r"more information: (mailto\:|(news|(ht|f)tp(s?))\:\/\/){1}\S+"
 BUILTIN_EXCEPTION_NAMES = frozenset(
     name
