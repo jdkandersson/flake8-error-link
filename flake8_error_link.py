@@ -157,15 +157,18 @@ class Visitor(ast.NodeVisitor):
                 because it does not provide a message at all.
             raise <inbuilt exception>('<constant>'+): any inbuilt exception raised with
                 one or more constants that is either not a string or does not match the more
-                information regular expression
+                information regular expression, invalid because the more information link is not
+                included.
             raise <any exception>(<constant>*, <variable>+, <constant>*): exception is raised where
                 any one of the arguments is not a constant (e.g., a variable, function call) and
-                none of the constants are a string with a link to more information
+                none of the constants are a string with a link to more information, invalid because
+                the more information link is not included.
+            raise: Calling raise without exception, invalid because the more information link is
+                not included.
         Valid nodes:
-            raise: Calling raise without exception, valid because this just re-raises an exception
-                which could be any exception
-            raise <exception>('<constant>'+): any exception raised with one or more constants where
-                one of the constants has the more information link
+            raise <exception>('<constant>'+, <variable>?): any exception raised with one or more
+                constants and zero or more variables where one of the constants has the more
+                information link.
 
         Args:
             node: The node to check.
