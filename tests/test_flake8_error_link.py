@@ -80,19 +80,23 @@ def _result(code: str) -> tuple[str, ...]:
             id="custom exception more information not provided",
         ),
         pytest.param(
-            'msg = ""\nraise Exception(msg)', (f"2:0 {VARIABLE_INCLUDED_MSG}",), id="variable"
+            'msg = ""\nraise Exception(msg)',
+            (f"2:0 {VARIABLE_INCLUDED_MSG}",),
+            id="more information not provided variable",
         ),
         pytest.param(
             "raise Exception(function_call())",
             (f"1:0 {VARIABLE_INCLUDED_MSG}",),
-            id="argument is a function call",
+            id="more information not provided argument is a function call",
         ),
         pytest.param(
             "raise Exception((lambda: 1)())",
             (f"1:0 {VARIABLE_INCLUDED_MSG}",),
-            id="argument is lambda definition and call",
+            id="more information not provided argument is lambda definition and call",
         ),
-        pytest.param("raise", (f"1:0 {RE_RAISE_MSG}",), id="no exception"),
+        pytest.param(
+            "raise", (f"1:0 {RE_RAISE_MSG}",), id="more information not provided no exception"
+        ),
         pytest.param(
             "raise Exception() from exc",
             (f"1:0 {BUILTIN_MSG}",),
@@ -106,12 +110,12 @@ def _result(code: str) -> tuple[str, ...]:
         pytest.param(
             f'msg = ""\nraise Exception(msg, "{_VALID_RAISE_MSG}")',
             (),
-            id="variable more information provided",
+            id="more information provided variable",
         ),
         pytest.param(
             f'raise CustomError("{_VALID_RAISE_MSG}")',
             (),
-            id="custom exception more information provided",
+            id="more information provided custom exception",
         ),
         pytest.param(
             f'raise ValueError("{_VALID_RAISE_MSG}")',
