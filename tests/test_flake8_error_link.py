@@ -15,6 +15,8 @@ from flake8_error_link import (
     ERROR_LINK_REGEX_ARG_NAME,
     VARIABLE_INCLUDED_CODE,
     VARIABLE_INCLUDED_MSG,
+    RE_RAISE_CODE,
+    RE_RAISE_MSG,
     Plugin,
 )
 
@@ -90,6 +92,12 @@ def _result(code: str) -> tuple[str, ...]:
             (f"1:0 {VARIABLE_INCLUDED_MSG}",),
             id="argument is lambda definition and call",
         ),
+        pytest.param("raise", (f"1:0 {RE_RAISE_MSG}",), id="no exception"),
+        pytest.param(
+            "raise Exception() from exc",
+            (f"1:0 {BUILTIN_MSG}",),
+            id="more information not provided from",
+        ),
         pytest.param(
             f'raise Exception("{_VALID_RAISE_MSG}")',
             (),
@@ -135,11 +143,15 @@ def _result(code: str) -> tuple[str, ...]:
             (),
             id="more information provided walrus",
         ),
-        pytest.param("raise", (), id="no exception"),
         pytest.param(
             f'raise Exception(f"{_VALID_RAISE_MSG} {{variable}}")',
             (),
             id="more information provided f-string",
+        ),
+        pytest.param(
+            f'raise Exception("{_VALID_RAISE_MSG}") from exc',
+            (),
+            id="more information provided from",
         ),
     ],
 )
@@ -205,7 +217,7 @@ def test_integration_fail(tmp_path: Path):
 @pytest.mark.parametrize(
     "code, extra_args",
     [
-        pytest.param(f"raise Exception('{_VALID_RAISE_MSG}')\n", "", id="default regex"),
+        pytest.param(f'raise Exception("{_VALID_RAISE_MSG}")\n', "", id="default regex"),
         pytest.param(
             "raise Exception('test')\n", f"{ERROR_LINK_REGEX_ARG_NAME} test", id="custom regex"
         ),
@@ -224,6 +236,12 @@ def test_integration_fail(tmp_path: Path):
             f'test = "test"\nraise Exception(test)  # noqa: {VARIABLE_INCLUDED_CODE}\n',
             "",
             id=f"{VARIABLE_INCLUDED_CODE} suppressed",
+        ),
+        pytest.param(
+            f'try:\n    raise Exception("{_VALID_RAISE_MSG}")\n'
+            f"except Exception:\n    raise  # noqa: {RE_RAISE_CODE}\n",
+            "",
+            id=f"{RE_RAISE_CODE} suppressed",
         ),
     ],
 )

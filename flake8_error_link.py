@@ -29,6 +29,8 @@ VARIABLE_INCLUDED_CODE = f"{ERROR_CODE_PREFIX}003"
 VARIABLE_INCLUDED_MSG = (
     f"{VARIABLE_INCLUDED_CODE} (detected variable in exception args) {BASE_MSG}"
 )
+RE_RAISE_CODE = f"{ERROR_CODE_PREFIX}004"
+RE_RAISE_MSG = f"{RE_RAISE_CODE} re-raised {BASE_MSG}"
 DEFAULT_REGEX = r"more information: (mailto\:|(news|(ht|f)tp(s?))\:\/\/){1}\S+"
 BUILTIN_EXCEPTION_NAMES = frozenset(
     name
@@ -179,6 +181,9 @@ class Visitor(ast.NodeVisitor):
                 if hasattr(node.exc.func, "id") and node.exc.func.id in BUILTIN_EXCEPTION_NAMES:
                     return BUILTIN_MSG
                 return CUSTOM_MSG
+
+        if node.exc is None:
+            return RE_RAISE_MSG
 
         return None
 

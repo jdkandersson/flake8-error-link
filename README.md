@@ -54,3 +54,5 @@ A few rules have been defined to allow for selective suppression:
    arguments include a link to more information.
 * `ELI003`: checks that any exceptions that are raised with variable arguments
   include a constant argument with a link to more information.
+* `ELI004`: checks that any exceptions that are re-raised include a constant
+  argument with a link to more information.
