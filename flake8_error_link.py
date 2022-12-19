@@ -98,7 +98,8 @@ class Visitor(ast.NodeVisitor):
                 case _:
                     yield node
 
-    def _includes_variable(self, node: ast.Call) -> bool:
+    @staticmethod
+    def _includes_variable(node: ast.Call) -> bool:
         """Check whether the node includes a variable in its arguments.
 
         Args:
@@ -111,7 +112,7 @@ class Visitor(ast.NodeVisitor):
             next(
                 filter(
                     lambda arg: not isinstance(arg, ast.Constant),
-                    self._iter_args(node.args),
+                    Visitor._iter_args(node.args),
                 ),
                 None,
             )
