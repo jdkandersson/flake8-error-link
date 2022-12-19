@@ -192,7 +192,7 @@ except Exception as exc:
     ) from exc
 ```
 
-This rule can be spurios at times if an exception is re-raisesd that already
+This rule can be spurious at times if an exception is re-raisesd that already
 has a more information link. Regardless, it is usually a good idea to include a
 specific link for a problem. The context is usually different when an exception
 is re-raised so it could be useful to include documentation for that context
