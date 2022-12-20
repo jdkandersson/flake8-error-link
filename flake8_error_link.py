@@ -87,6 +87,7 @@ class Visitor(ast.NodeVisitor):
         """
         # pylint seems to think self._iter_arg et al doesn't return an iterable
         # pylint: disable=not-an-iterable
+
         yield node
 
         # Handle add
@@ -122,6 +123,7 @@ class Visitor(ast.NodeVisitor):
         """
         # pylint seems to think self._iter_arg et al doesn't return an iterable
         # pylint: disable=not-an-iterable
+
         yield node
 
         # Handle str.format, need it all to be in one expression so that mypy works
@@ -177,6 +179,7 @@ class Visitor(ast.NodeVisitor):
         """
         # pylint seems to think self._iter_arg et al doesn't return an iterable
         # pylint: disable=not-an-iterable
+
         match type(node):
             case ast.JoinedStr:
                 assert isinstance(node, ast.JoinedStr)
