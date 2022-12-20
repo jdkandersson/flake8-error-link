@@ -103,6 +103,46 @@ def _result(code: str) -> tuple[str, ...]:
             id="more information not provided from",
         ),
         pytest.param(
+            "raise Exception(1 + 1)",
+            (f"1:0 {VARIABLE_INCLUDED_MSG}",),
+            id="more information not provided +",
+        ),
+        pytest.param(
+            "raise Exception(1 + 1 + 1)",
+            (f"1:0 {VARIABLE_INCLUDED_MSG}",),
+            id="more information not provided + multiple",
+        ),
+        pytest.param(
+            "raise Exception(1 % 1)",
+            (f"1:0 {VARIABLE_INCLUDED_MSG}",),
+            id="more information not provided %",
+        ),
+        pytest.param(
+            f'raise Exception(1 % "{_VALID_RAISE_MSG}")',
+            (f"1:0 {VARIABLE_INCLUDED_MSG}",),
+            id="more information not provided % right string",
+        ),
+        pytest.param(
+            'raise Exception("%s" % 1)',
+            (f"1:0 {VARIABLE_INCLUDED_MSG}",),
+            id="more information not provided % left string",
+        ),
+        pytest.param(
+            'raise Exception("%s" % [1])',
+            (f"1:0 {VARIABLE_INCLUDED_MSG}",),
+            id="more information not provided % right list",
+        ),
+        pytest.param(
+            f'raise Exception([].join(["{_VALID_RAISE_MSG}"]))',
+            (f"1:0 {VARIABLE_INCLUDED_MSG}",),
+            id="more information not provided join not on string",
+        ),
+        pytest.param(
+            f'raise Exception([].format("{_VALID_RAISE_MSG}"))',
+            (f"1:0 {VARIABLE_INCLUDED_MSG}",),
+            id="more information not provided format not on string",
+        ),
+        pytest.param(
             f'raise Exception("{_VALID_RAISE_MSG}")',
             (),
             id="more information provided",
@@ -131,6 +171,141 @@ def _result(code: str) -> tuple[str, ...]:
             f'raise Exception("{_VALID_RAISE_MSG}", "second")',
             (),
             id="more information provided first args",
+        ),
+        pytest.param(
+            f'raise Exception("{_VALID_RAISE_MSG}" + "trailing ")',
+            (),
+            id="more information provided string + first",
+        ),
+        pytest.param(
+            f'raise Exception("leading " + "{_VALID_RAISE_MSG}")',
+            (),
+            id="more information provided string + second",
+        ),
+        pytest.param(
+            f'raise Exception("leading " + "{_VALID_RAISE_MSG}" + "trailing")',
+            (),
+            id="more information provided string multiple +",
+        ),
+        pytest.param(
+            f'raise Exception("{_VALID_RAISE_MSG}" + trailing)',
+            (),
+            id="more information provided string + first variable",
+        ),
+        pytest.param(
+            f'raise Exception(leading + "{_VALID_RAISE_MSG}")',
+            (),
+            id="more information provided string + second variable",
+        ),
+        pytest.param(
+            f'raise Exception("{_VALID_RAISE_MSG}" "trailing ")',
+            (),
+            id="more information provided string space first",
+        ),
+        pytest.param(
+            f'raise Exception("leading " "{_VALID_RAISE_MSG}")',
+            (),
+            id="more information provided string space second",
+        ),
+        pytest.param(
+            f'raise Exception("leading " "{_VALID_RAISE_MSG}" "trailing")',
+            (),
+            id="more information provided string multiple space",
+        ),
+        pytest.param(
+            f'raise Exception("leading " "{_VALID_RAISE_MSG}" + "trailing")',
+            (),
+            id="more information provided string multiple space and +",
+        ),
+        pytest.param(
+            f'raise Exception("%s".format("{_VALID_RAISE_MSG}"))',
+            (),
+            id="more information provided string format more info in argument",
+        ),
+        pytest.param(
+            f'raise Exception("%s".format("{_VALID_RAISE_MSG}", variable))',
+            (),
+            id="more information provided string format more info in argument with variable",
+        ),
+        pytest.param(
+            f'raise Exception(variable.format("{_VALID_RAISE_MSG}"))',
+            (),
+            id="more information provided string format variable",
+        ),
+        pytest.param(
+            f'raise Exception("{_VALID_RAISE_MSG} %s".format(""))',
+            (),
+            id="more information provided string format more info in string",
+        ),
+        pytest.param(
+            f'raise Exception("".join(["{_VALID_RAISE_MSG}"]))',
+            (),
+            id="more information provided string join more info in argument list",
+        ),
+        pytest.param(
+            f'raise Exception(variable.join(["{_VALID_RAISE_MSG}"]))',
+            (),
+            id="more information provided string join variable",
+        ),
+        pytest.param(
+            f'raise Exception("".join(["{_VALID_RAISE_MSG}", variable]))',
+            (),
+            id="more information provided string join more info in argument list with variable",
+        ),
+        pytest.param(
+            f'raise Exception("".join(("{_VALID_RAISE_MSG}",)))',
+            (),
+            id="more information provided string join more info in argument tuple",
+        ),
+        pytest.param(
+            f'raise Exception("".join({{"{_VALID_RAISE_MSG}"}}))',
+            (),
+            id="more information provided string join more info in argument set",
+        ),
+        pytest.param(
+            f'raise Exception("".join(["{_VALID_RAISE_MSG}", "second"]))',
+            (),
+            id="more information provided string join more info in argument first",
+        ),
+        pytest.param(
+            f'raise Exception("".join(["first", "{_VALID_RAISE_MSG}"]))',
+            (),
+            id="more information provided string join more info in argument second",
+        ),
+        pytest.param(
+            f'raise Exception("{_VALID_RAISE_MSG}".join([""]))',
+            (),
+            id="more information provided string join more info in string",
+        ),
+        pytest.param(
+            f'raise Exception("%s" % "{_VALID_RAISE_MSG}")',
+            (),
+            id="more information provided string %",
+        ),
+        pytest.param(
+            f'raise Exception("%s" % ("{_VALID_RAISE_MSG}",))',
+            (),
+            id="more information provided string % tuple",
+        ),
+        pytest.param(
+            f'raise Exception("%s" % ("{_VALID_RAISE_MSG}", "trailing "))',
+            (),
+            id="more information provided string % multiple first",
+        ),
+        pytest.param(
+            f'raise Exception("%s" % ("leading ", "{_VALID_RAISE_MSG}"))',
+            (),
+            id="more information provided string % multiple second",
+        ),
+        pytest.param(
+            f'raise Exception("%s" % ("leading ", "{_VALID_RAISE_MSG}", "trailing"))',
+            (),
+            id="more information provided string % multiple many",
+        ),
+        pytest.param(
+            f'raise Exception("{_VALID_RAISE_MSG} %s" % "right")',
+            (),
+            id="more information provided string % in left",
         ),
         pytest.param(
             f'raise Exception("other text {_VALID_RAISE_MSG}")',

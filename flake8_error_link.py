@@ -5,6 +5,7 @@ import ast
 import builtins
 import re
 import tomllib
+from itertools import chain
 from pathlib import Path
 from typing import Generator, Iterable, NamedTuple
 
@@ -76,11 +77,131 @@ class Visitor(ast.NodeVisitor):
         self._more_info_regex = re.compile(rf".*{more_info_regex}.*")
 
     @staticmethod
+    def _iter_arg_bin_op(node: ast.BinOp) -> Iterable[ast.expr]:
+        """Flatenning binary operation.
+
+        Args:
+            node: The node to yield over.
+
+        Yields:
+            All the args including any relevant nested args.
+        """
+        # pylint seems to think self._iter_arg et al doesn't return an iterable
+        # pylint: disable=not-an-iterable
+
+        yield node
+
+        # Handle add
+        if isinstance(node.op, ast.Add):
+            if isinstance(node.left, ast.Constant) and isinstance(node.left.value, str):
+                yield from Visitor._iter_arg(node.left)
+            if isinstance(node.left, ast.BinOp):
+                yield from Visitor._iter_arg_bin_op(node.left)
+            if isinstance(node.right, ast.Constant) and isinstance(node.right.value, str):
+                yield from Visitor._iter_arg(node.right)
+
+        # Handle modulus
+        if (
+            isinstance(node.op, ast.Mod)
+            and isinstance(node.left, ast.Constant)
+            and isinstance(node.left.value, str)
+        ):
+            yield from Visitor._iter_arg(node.left)
+            if isinstance(node.right, ast.Tuple):
+                yield from Visitor._iter_args(node.right.elts)
+            if isinstance(node.right, ast.Constant):
+                yield from Visitor._iter_arg(node.right)
+
+    @staticmethod
+    def _iter_arg_call(node: ast.Call) -> Iterable[ast.expr]:
+        """Flatenning call operation.
+
+        Args:
+            node: The node to yield over.
+
+        Yields:
+            All the args including any relevant nested args.
+        """
+        # pylint seems to think self._iter_arg et al doesn't return an iterable
+        # pylint: disable=not-an-iterable
+
+        yield node
+
+        # Handle str.format, need it all to be in one expression so that mypy works
+        if (
+            hasattr(node, "func")  # pylint: disable=too-many-boolean-expressions
+            and hasattr(node.func, "attr")
+            and node.func.attr == "format"
+            and hasattr(node.func, "value")
+            and (
+                (
+                    isinstance(node.func.value, ast.Constant)
+                    and isinstance(node.func.value.value, str)
+                )
+                or isinstance(node.func.value, ast.Name)
+            )
+            and hasattr(node, "args")
+        ):
+            yield from Visitor._iter_arg(node.func.value)
+            yield from Visitor._iter_args(node.args)
+
+        # Handle str.join, need it all to be in one expression so that mypy works
+        if (
+            hasattr(node, "func")  # pylint: disable=too-many-boolean-expressions
+            and hasattr(node.func, "attr")
+            and node.func.attr == "join"
+            and hasattr(node.func, "value")
+            and (
+                (
+                    isinstance(node.func.value, ast.Constant)
+                    and isinstance(node.func.value.value, str)
+                )
+                or isinstance(node.func.value, ast.Name)
+            )
+            and hasattr(node, "args")
+            and isinstance(node.args, list)
+            and len(node.args) == 1
+            and isinstance(node.args[0], (ast.List, ast.Set, ast.Tuple))
+        ):
+            yield from Visitor._iter_arg(node.func.value)
+            yield from Visitor._iter_args(node.args[0].elts)
+
+    @staticmethod
+    def _iter_arg(node: ast.expr) -> Iterable[ast.expr]:
+        """Flatenning certain argument types.
+
+        Yields certain nested expressions for some kinds of expressions.
+
+        Args:
+            node: The node to yield over.
+
+        Yields:
+            All the args including any relevant nested args.
+        """
+        # pylint seems to think self._iter_arg et al doesn't return an iterable
+        # pylint: disable=not-an-iterable
+
+        match type(node):
+            case ast.JoinedStr:
+                assert isinstance(node, ast.JoinedStr)
+                yield node
+                yield from Visitor._iter_args(node.values)
+            case ast.NamedExpr:
+                assert isinstance(node, ast.NamedExpr)
+                yield node
+                yield from Visitor._iter_arg(node.value)
+            case ast.BinOp:
+                assert isinstance(node, ast.BinOp)
+                yield from Visitor._iter_arg_bin_op(node)
+            case ast.Call:
+                assert isinstance(node, ast.Call)
+                yield from Visitor._iter_arg_call(node)
+            case _:
+                yield node
+
+    @staticmethod
     def _iter_args(nodes: list[ast.expr]) -> Iterable[ast.expr]:
         """Iterate over the args whilst flatenning certain argument types.
-
-        Yields node and node.values from JoinedStr and node and node.value from NamedExpr and node
-        in all other cases.
 
         Args:
             nodes: The nodes to iterate over.
@@ -88,18 +209,7 @@ class Visitor(ast.NodeVisitor):
         Yields:
             All the args including any relevant nested args.
         """
-        for node in nodes:
-            match type(node):
-                case ast.JoinedStr:
-                    assert isinstance(node, ast.JoinedStr)
-                    yield node
-                    yield from node.values
-                case ast.NamedExpr:
-                    assert isinstance(node, ast.NamedExpr)
-                    yield node
-                    yield node.value
-                case _:
-                    yield node
+        return chain.from_iterable(map(Visitor._iter_arg, nodes))
 
     @staticmethod
     def _includes_variable(node: ast.Call) -> bool:
