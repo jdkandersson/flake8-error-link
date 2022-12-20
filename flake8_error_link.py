@@ -5,6 +5,7 @@ import ast
 import builtins
 import re
 import tomllib
+from itertools import chain
 from pathlib import Path
 from typing import Generator, Iterable, NamedTuple
 
@@ -208,9 +209,7 @@ class Visitor(ast.NodeVisitor):
         Yields:
             All the args including any relevant nested args.
         """
-        for node in nodes:
-            # pylint seems to think self._iter_arg doesn't return an iterable
-            yield from Visitor._iter_arg(node)  # pylint: disable=not-an-iterable
+        return chain.from_iterable(map(Visitor._iter_arg, nodes))
 
     @staticmethod
     def _includes_variable(node: ast.Call) -> bool:
