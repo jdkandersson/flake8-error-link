@@ -10,6 +10,8 @@ from typing import Generator, Iterable, NamedTuple
 
 from flake8.options.manager import OptionManager
 
+from astpretty import pprint
+
 ERROR_CODE_PREFIX = next(
     iter(
         tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))["tool"]["poetry"][
@@ -76,11 +78,101 @@ class Visitor(ast.NodeVisitor):
         self._more_info_regex = re.compile(rf".*{more_info_regex}.*")
 
     @staticmethod
+    def _iter_arg(node: ast.expr) -> Iterable[ast.expr]:
+        """Flatenning certain argument types.
+
+        Yields certain nested expressions for some kinds of expressions.
+
+        Args:
+            node: The node to yield over.
+
+        Yields:
+            All the args including any relevant nested args.
+        """
+        # pylint seems to think self._iter_arg doesn't return an iterable
+        # pylint: disable=not-an-iterable
+        match type(node):
+            case ast.JoinedStr:
+                assert isinstance(node, ast.JoinedStr)
+                yield node
+                yield from Visitor._iter_args(node.values)
+            case ast.NamedExpr:
+                assert isinstance(node, ast.NamedExpr)
+                yield node
+                yield from Visitor._iter_arg(node.value)
+            case ast.BinOp:
+                assert isinstance(node, ast.BinOp)
+                yield node
+
+                # Handle add
+                if isinstance(node.op, ast.Add):
+                    if isinstance(node.left, ast.Constant) and isinstance(node.left.value, str):
+                        yield from Visitor._iter_arg(node.left)
+                    if isinstance(node.left, ast.BinOp):
+                        yield from Visitor._iter_arg(node.left)
+                    if isinstance(node.right, ast.Constant) and isinstance(node.right.value, str):
+                        yield from Visitor._iter_arg(node.right)
+
+                # Handle modulus
+                if (
+                    isinstance(node.op, ast.Mod)
+                    and isinstance(node.left, ast.Constant)
+                    and isinstance(node.left.value, str)
+                ):
+                    yield from Visitor._iter_arg(node.left)
+                    if isinstance(node.right, ast.Tuple):
+                        yield from Visitor._iter_args(node.right.elts)
+                    if isinstance(node.right, ast.Constant):
+                        yield from Visitor._iter_arg(node.right)
+            case ast.Call:
+                assert isinstance(node, ast.Call)
+                yield node
+                pprint(node)
+
+                # Handle str.format, need it all to be in one expression so that mypy works
+                if (
+                    hasattr(node, "func")  # pylint: disable=too-many-boolean-expressions
+                    and hasattr(node.func, "attr")
+                    and node.func.attr == "format"
+                    and hasattr(node.func, "value")
+                    and (
+                        (
+                            isinstance(node.func.value, ast.Constant)
+                            and isinstance(node.func.value.value, str)
+                        )
+                        or isinstance(node.func.value, ast.Name)
+                    )
+                    and hasattr(node, "args")
+                ):
+                    yield from Visitor._iter_arg(node.func.value)
+                    yield from Visitor._iter_args(node.args)
+
+                # Handle str.join, need it all to be in one expression so that mypy works
+                if (
+                    hasattr(node, "func")  # pylint: disable=too-many-boolean-expressions
+                    and hasattr(node.func, "attr")
+                    and node.func.attr == "join"
+                    and hasattr(node.func, "value")
+                    and (
+                        (
+                            isinstance(node.func.value, ast.Constant)
+                            and isinstance(node.func.value.value, str)
+                        )
+                        or isinstance(node.func.value, ast.Name)
+                    )
+                    and hasattr(node, "args")
+                    and isinstance(node.args, list)
+                    and len(node.args) == 1
+                    and isinstance(node.args[0], (ast.List, ast.Set, ast.Tuple))
+                ):
+                    yield from Visitor._iter_arg(node.func.value)
+                    yield from Visitor._iter_args(node.args[0].elts)
+            case _:
+                yield node
+
+    @staticmethod
     def _iter_args(nodes: list[ast.expr]) -> Iterable[ast.expr]:
         """Iterate over the args whilst flatenning certain argument types.
-
-        Yields node and node.values from JoinedStr and node and node.value from NamedExpr and node
-        in all other cases.
 
         Args:
             nodes: The nodes to iterate over.
@@ -89,17 +181,8 @@ class Visitor(ast.NodeVisitor):
             All the args including any relevant nested args.
         """
         for node in nodes:
-            match type(node):
-                case ast.JoinedStr:
-                    assert isinstance(node, ast.JoinedStr)
-                    yield node
-                    yield from node.values
-                case ast.NamedExpr:
-                    assert isinstance(node, ast.NamedExpr)
-                    yield node
-                    yield node.value
-                case _:
-                    yield node
+            # pylint seems to think self._iter_arg doesn't return an iterable
+            yield from Visitor._iter_arg(node)  # pylint: disable=not-an-iterable
 
     @staticmethod
     def _includes_variable(node: ast.Call) -> bool:
