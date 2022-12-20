@@ -223,9 +223,14 @@ def _result(code: str) -> tuple[str, ...]:
             id="more information provided string format more info in argument",
         ),
         pytest.param(
+            f'raise Exception("%s".format("{_VALID_RAISE_MSG}", variable))',
+            (),
+            id="more information provided string format more info in argument with variable",
+        ),
+        pytest.param(
             f'raise Exception(variable.format("{_VALID_RAISE_MSG}"))',
             (),
-            id="more information provided string formatvariable",
+            id="more information provided string format variable",
         ),
         pytest.param(
             f'raise Exception("{_VALID_RAISE_MSG} %s".format(""))',
@@ -241,6 +246,11 @@ def _result(code: str) -> tuple[str, ...]:
             f'raise Exception(variable.join(["{_VALID_RAISE_MSG}"]))',
             (),
             id="more information provided string join variable",
+        ),
+        pytest.param(
+            f'raise Exception("".join(["{_VALID_RAISE_MSG}", variable]))',
+            (),
+            id="more information provided string join more info in argument list with variable",
         ),
         pytest.param(
             f'raise Exception("".join(("{_VALID_RAISE_MSG}",)))',
