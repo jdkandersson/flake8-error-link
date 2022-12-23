@@ -5,7 +5,7 @@ import ast
 import builtins
 import re
 from itertools import chain
-from typing import Generator, Iterable, List, NamedTuple, Tuple, Type, Optional
+from typing import Generator, Iterable, List, NamedTuple, Optional, Tuple, Type
 
 from flake8.options.manager import OptionManager
 
