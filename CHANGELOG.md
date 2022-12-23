@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [v1.2.0] - 2022-12-23
+
+### Added
+
+- Support for Python 3.8 and later
+
+### Fixed
+
+- Dependency on missing `pyproject.toml`
+
 ## [v1.1.0] - 2022-12-20
 
 ### Added
@@ -28,6 +38,7 @@
 - Lint checks for re-raised exceptions
 
 [//]: # "Release links"
-[v1.1.0]: https://github.com/jdkandersson/flake8-error-link/releases/v1.1.0
-[v1.0.1]: https://github.com/jdkandersson/flake8-error-link/releases/v1.0.1
 [v1.0.0]: https://github.com/jdkandersson/flake8-error-link/releases/v1.0.0
+[v1.0.1]: https://github.com/jdkandersson/flake8-error-link/releases/v1.0.1
+[v1.1.0]: https://github.com/jdkandersson/flake8-error-link/releases/v1.1.0
+[v1.2.0]: https://github.com/jdkandersson/flake8-error-link/releases/v1.2.0

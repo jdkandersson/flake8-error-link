@@ -4,20 +4,12 @@ import argparse
 import ast
 import builtins
 import re
-import tomllib
 from itertools import chain
-from pathlib import Path
-from typing import Generator, Iterable, NamedTuple
+from typing import Generator, Iterable, List, NamedTuple, Tuple, Type
 
 from flake8.options.manager import OptionManager
 
-ERROR_CODE_PREFIX = next(
-    iter(
-        tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))["tool"]["poetry"][
-            "plugins"
-        ]["flake8.extension"].keys()
-    )
-)
+ERROR_CODE_PREFIX = "ELI"
 BASE_MSG = (
     "exceptions should be raised with a link to more information: "
     "https://github.com/jdkandersson/flake8-error-link"
@@ -64,7 +56,7 @@ class Visitor(ast.NodeVisitor):
             information was included.
     """
 
-    problems: list[Problem]
+    problems: List[Problem]
     _more_info_regex: re.Pattern[str]
 
     def __init__(self, more_info_regex: str = DEFAULT_REGEX) -> None:
@@ -181,26 +173,18 @@ class Visitor(ast.NodeVisitor):
         # pylint seems to think self._iter_arg et al doesn't return an iterable
         # pylint: disable=not-an-iterable
 
-        match type(node):
-            case ast.JoinedStr:
-                assert isinstance(node, ast.JoinedStr)
-                yield node
-                yield from Visitor._iter_args(node.values)
-            case ast.NamedExpr:
-                assert isinstance(node, ast.NamedExpr)
-                yield node
-                yield from Visitor._iter_arg(node.value)
-            case ast.BinOp:
-                assert isinstance(node, ast.BinOp)
-                yield from Visitor._iter_arg_bin_op(node)
-            case ast.Call:
-                assert isinstance(node, ast.Call)
-                yield from Visitor._iter_arg_call(node)
-            case _:
-                yield node
+        yield node
+        if isinstance(node, ast.JoinedStr):
+            yield from Visitor._iter_args(node.values)
+        elif isinstance(node, ast.NamedExpr):
+            yield from Visitor._iter_arg(node.value)
+        elif isinstance(node, ast.BinOp):
+            yield from Visitor._iter_arg_bin_op(node)
+        elif isinstance(node, ast.Call):
+            yield from Visitor._iter_arg_call(node)
 
     @staticmethod
-    def _iter_args(nodes: list[ast.expr]) -> Iterable[ast.expr]:
+    def _iter_args(nodes: List[ast.expr]) -> Iterable[ast.expr]:
         """Iterate over the args whilst flatenning certain argument types.
 
         Args:
@@ -322,9 +306,6 @@ class Plugin:
     """Ensures all raised Exceptions include an error with a link to more information."""
 
     name = __name__
-    version = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))["tool"]["poetry"][
-        "version"
-    ]
     _error_link_regex: str = DEFAULT_REGEX
 
     def __init__(self, tree: ast.AST) -> None:
@@ -359,7 +340,7 @@ class Plugin:
         """
         cls._error_link_regex = options.error_link_regex or cls._error_link_regex
 
-    def run(self) -> Generator[tuple[int, int, str, type["Plugin"]], None, None]:
+    def run(self) -> Generator[Tuple[int, int, str, Type["Plugin"]], None, None]:
         """Lint a file.
 
         Yields:
