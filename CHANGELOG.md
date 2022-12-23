@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-## [v1.2.0] - 2022-12-23
+## [v1.2.1] - 2022-12-23
 
 ### Added
 
@@ -41,4 +41,4 @@
 [v1.0.0]: https://github.com/jdkandersson/flake8-error-link/releases/v1.0.0
 [v1.0.1]: https://github.com/jdkandersson/flake8-error-link/releases/v1.0.1
 [v1.1.0]: https://github.com/jdkandersson/flake8-error-link/releases/v1.1.0
-[v1.2.0]: https://github.com/jdkandersson/flake8-error-link/releases/v1.2.0
+[v1.2.1]: https://github.com/jdkandersson/flake8-error-link/releases/v1.2.1

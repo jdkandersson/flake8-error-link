@@ -57,7 +57,7 @@ class Visitor(ast.NodeVisitor):
     """
 
     problems: List[Problem]
-    _more_info_regex: re.Pattern[str]
+    _more_info_regex: re.Pattern
 
     def __init__(self, more_info_regex: str = DEFAULT_REGEX) -> None:
         """Construct.
