@@ -5,7 +5,7 @@ import ast
 import builtins
 import re
 from itertools import chain
-from typing import Generator, Iterable, List, NamedTuple, Tuple, Type
+from typing import Generator, Iterable, List, NamedTuple, Optional, Tuple, Type
 
 from flake8.options.manager import OptionManager
 
@@ -241,7 +241,7 @@ class Visitor(ast.NodeVisitor):
             is not None
         )
 
-    def _node_problem_message(self, node: ast.Raise) -> str | None:
+    def _node_problem_message(self, node: ast.Raise) -> Optional[str]:
         """Check whether a node has a problem.
 
         Invalid nodes:
