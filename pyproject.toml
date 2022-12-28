@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "flake8-error-link"
-version = "1.2.2"
+version = "1.2.3"
 description = "A linter that ensures all raised Exceptions include an error with a link to more information"
-authors = ["David Andersson <51036209+jdkandersson@users.noreply.github.com>"]
+authors = ["David Andersson <david@jdkandersson.com>"]
 license = "Apache 2.0"
 readme = "README.md"
 packages = [{include = "flake8_error_link.py"}]

@@ -1,10 +1,11 @@
 """Tests for plugin."""
 
+from __future__ import annotations
+
 import ast
 import subprocess
 import sys
 from pathlib import Path
-from typing import Tuple
 
 import pytest
 
@@ -335,7 +336,7 @@ def _result(code: str) -> Tuple[str, ...]:
         ),
     ],
 )
-def test_plugin(code: str, expected_result: Tuple[str, ...]):
+def test_plugin(code: str, expected_result: tuple[str, ...]):
     """
     given: code
     when: linting is run on the code
