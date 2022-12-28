@@ -25,7 +25,7 @@ from flake8_error_link import (
 _VALID_RAISE_MSG = "more information: http://example.com"
 
 
-def _result(code: str) -> Tuple[str, ...]:
+def _result(code: str) -> tuple[str, ...]:
     """Generate linting results.
 
     Args:
