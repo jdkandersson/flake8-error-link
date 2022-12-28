@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [v1.2.3] - 2022-12-28
+
+- Change to using inbuilt types rather than from `typing`
+
 ## [v1.2.2] - 2022-12-23
 
 ### Added
@@ -42,3 +46,4 @@
 [v1.0.1]: https://github.com/jdkandersson/flake8-error-link/releases/v1.0.1
 [v1.1.0]: https://github.com/jdkandersson/flake8-error-link/releases/v1.1.0
 [v1.2.2]: https://github.com/jdkandersson/flake8-error-link/releases/v1.2.2
+[v1.2.3]: https://github.com/jdkandersson/flake8-error-link/releases/v1.2.3

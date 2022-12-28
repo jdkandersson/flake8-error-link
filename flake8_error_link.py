@@ -1,11 +1,13 @@
 """A linter that ensures all raised Exceptions include an error with a link to more information."""
 
+from __future__ import annotations
+
 import argparse
 import ast
 import builtins
 import re
 from itertools import chain
-from typing import Generator, Iterable, List, NamedTuple, Optional, Tuple, Type
+from typing import Iterable, Iterator, NamedTuple
 
 from flake8.options.manager import OptionManager
 
@@ -56,7 +58,7 @@ class Visitor(ast.NodeVisitor):
             information was included.
     """
 
-    problems: List[Problem]
+    problems: list[Problem]
     _more_info_regex: re.Pattern
 
     def __init__(self, more_info_regex: str = DEFAULT_REGEX) -> None:
@@ -184,7 +186,7 @@ class Visitor(ast.NodeVisitor):
             yield from Visitor._iter_arg_call(node)
 
     @staticmethod
-    def _iter_args(nodes: List[ast.expr]) -> Iterable[ast.expr]:
+    def _iter_args(nodes: list[ast.expr]) -> Iterable[ast.expr]:
         """Iterate over the args whilst flatenning certain argument types.
 
         Args:
@@ -241,7 +243,7 @@ class Visitor(ast.NodeVisitor):
             is not None
         )
 
-    def _node_problem_message(self, node: ast.Raise) -> Optional[str]:
+    def _node_problem_message(self, node: ast.Raise) -> str | None:
         """Check whether a node has a problem.
 
         Invalid nodes:
@@ -340,7 +342,7 @@ class Plugin:
         """
         cls._error_link_regex = options.error_link_regex or cls._error_link_regex
 
-    def run(self) -> Generator[Tuple[int, int, str, Type["Plugin"]], None, None]:
+    def run(self) -> Iterator[tuple[int, int, str, type["Plugin"]]]:
         """Lint a file.
 
         Yields:
