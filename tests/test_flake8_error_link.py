@@ -347,7 +347,7 @@ def test_plugin(code: str, expected_result: tuple[str, ...]):
 
 def test_integration_help():
     """
-    given:
+    given: that flake8 and the linter is installed
     when: the flake8 help message is generated
     then: plugin is registered with flake8
     """
