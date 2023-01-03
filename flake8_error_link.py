@@ -195,7 +195,7 @@ class Visitor(ast.NodeVisitor):
         Yields:
             All the args including any relevant nested args.
         """
-        return chain.from_iterable(map(Visitor._iter_arg, nodes))
+        yield from chain.from_iterable(map(Visitor._iter_arg, nodes))
 
     @staticmethod
     def _includes_variable(node: ast.Call) -> bool:
@@ -243,6 +243,7 @@ class Visitor(ast.NodeVisitor):
             is not None
         )
 
+    # Section incorrectly identified as a raise section
     def _node_problem_message(self, node: ast.Raise) -> str | None:
         """Check whether a node has a problem.
 
@@ -271,7 +272,7 @@ class Visitor(ast.NodeVisitor):
 
         Returns:
             The problem message if there is a problem or None.
-        """
+        """  # noqa: DCO051
         # Handle case where the shortcut is used for exceptions
         if isinstance(node.exc, ast.Name):
             return BUILTIN_MSG if node.exc.id in BUILTIN_EXCEPTION_NAMES else CUSTOM_MSG
@@ -305,13 +306,21 @@ class Visitor(ast.NodeVisitor):
 
 
 class Plugin:
-    """Ensures all raised Exceptions include an error with a link to more information."""
+    """Ensures all raised Exceptions include an error with a link to more information.
+
+    Attrs:
+        name: The name of the linter.
+    """
 
     name = __name__
     _error_link_regex: str = DEFAULT_REGEX
 
     def __init__(self, tree: ast.AST) -> None:
-        """Construct."""
+        """Construct.
+
+        Args:
+            tree: The syntax tree to lint.
+        """
         self._tree = tree
 
     # No coverage since this only occurs from the command line

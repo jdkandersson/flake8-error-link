@@ -279,6 +279,37 @@ flake8 = ">=3"
 pydocstyle = ">=2.1"
 
 [[package]]
+name = "flake8-docstrings-complete"
+version = "1.0.0"
+description = "A linter that checks docstrings are complete"
+category = "main"
+optional = false
+python-versions = ">=3.8.1,<4.0.0"
+files = [
+    {file = "flake8_docstrings_complete-1.0.0-py3-none-any.whl", hash = "sha256:5562a8df71fd3ff12e283778fbf5440f6641a953214d33809bf06fbdd3440b23"},
+    {file = "flake8_docstrings_complete-1.0.0.tar.gz", hash = "sha256:273ff444aa709612598f0056e071a90dc1f8d9ec7c7713f7130d8c8d7d2fcce5"},
+]
+
+[package.dependencies]
+flake8 = ">=6,<7"
+
+[[package]]
+name = "flake8-test-docs"
+version = "1.0.7"
+description = "A linter that checks test docstrings for the arrange/act/assert structure"
+category = "main"
+optional = false
+python-versions = ">=3.8.1,<4.0.0"
+files = [
+    {file = "flake8_test_docs-1.0.7-py3-none-any.whl", hash = "sha256:f5ad2814414c535bdcd32c9cc9a78147bc697fcb70a10d4a2dee5ab28ec194a6"},
+    {file = "flake8_test_docs-1.0.7.tar.gz", hash = "sha256:a217d870a5b8045e38333e322cde68ef076f4e962ddc8e32abe6c676066dde07"},
+]
+
+[package.dependencies]
+flake8 = ">=6,<7"
+typing_extensions = {version = ">=4,<5", markers = "python_version < \"3.10\""}
+
+[[package]]
 name = "iniconfig"
 version = "1.1.1"
 description = "iniconfig: brain-dead simple config-ini parsing"
@@ -650,7 +681,7 @@ files = [
 name = "typing-extensions"
 version = "4.4.0"
 description = "Backported and Experimental Type Hints for Python 3.7+"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -735,4 +766,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8.1"
-content-hash = "686cb1f1f01d989fd1af389c96a05adeb959ef4759a4ad0f16d894e2714ff04a"
+content-hash = "90aa6e947695343d20c5912bce3a0bad0c39fcd40dcc87b67a2aea45da27cce6"
